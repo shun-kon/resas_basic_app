@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:resas_basic_app/city/detail_page.dart';
 
 import '../env.dart';
+import 'detail_page.dart';
 
 class CityListPage extends StatefulWidget {
   const CityListPage({super.key});
@@ -12,8 +14,7 @@ class CityListPage extends StatefulWidget {
 }
 
 class _CityListPageState extends State<CityListPage> {
-  late Future<String>_citiesFuture;
-
+  late Future<String> _citiesFuture;
 
   @override
   void initState() {
@@ -23,15 +24,16 @@ class _CityListPageState extends State<CityListPage> {
     final headers = {
       'X-API-KEY': Env.resasApiKey,
     };
-    _citiesFuture = http.get(
-      Uri.https(host, endpoint),
-      headers: headers,
-    ).then((res) => res.body);
+    _citiesFuture = http
+        .get(
+          Uri.https(host, endpoint),
+          headers: headers,
+        )
+        .then((res) => res.body);
   }
 
   @override
   Widget build(BuildContext context) {
-
     final cities = [
       '札幌市',
       '横浜市',
@@ -51,38 +53,41 @@ class _CityListPageState extends State<CityListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title:const Text('市区町村一覧'),
+        title: const Text('市区町村一覧'),
       ),
-      body:FutureBuilder<String>(
-        future:_citiesFuture,
+      body: FutureBuilder(
+        future: _citiesFuture,
         builder: (context, snapshot) {
-          switch (snapshot.connectionState){
+          switch (snapshot.connectionState) {
             case ConnectionState.done:
-            print(snapshot.data);
-          return ListView(
-            children: [
-            for (final city in cities)
-             ListTile(
-              title:Text(city),
-              subtitle: const Text('政令指定都市'),
-              trailing: const Icon(Icons.navigate_next),
-              onTap: (){
-               Navigator.of(context).push<void>(
-                MaterialPageRoute(
-                  builder: (context) => CityDetailPage(city: city),
-                ),
-               );
-              },
-              ),
-            ],
+              final json = jsonDecode(snapshot.data!)['result'] as List;
+              final items = json.cast<Map<String, dynamic>>();
+              return ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return ListTile(
+                    title: Text(item['cityName'] as String),
+                    subtitle: const Text('政令指定都市'),
+                    trailing: const Icon(Icons.navigate_next),
+                    onTap: () {
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CityDetailPage(city: item['cityName'] as String),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            case ConnectionState.none:
+            case ConnectionState.waiting:
+            case ConnectionState.active:
+          }
+          return const Center(
+            child: CircularProgressIndicator(),
           );
-          case ConnectionState.none:
-          case ConnectionState.waiting:
-          case ConnectionState.active:
-        }
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
         },
       ),
     );
