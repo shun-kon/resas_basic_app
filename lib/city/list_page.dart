@@ -12,23 +12,21 @@ class CityListPage extends StatefulWidget {
 }
 
 class _CityListPageState extends State<CityListPage> {
-  late Future<void>_future;
+  late Future<String>_citiesFuture;
 
 
   @override
   void initState() {
     super.initState();
-    _future =Future.delayed(const Duration(seconds: 3));
     const host = 'opendata.resas-portal.go.jp';
     const endpoint = '/api/v1/cities';
     final headers = {
       'X-API-KEY': Env.resasApiKey,
     };
-    final response = http.get(
+    _citiesFuture = http.get(
       Uri.https(host, endpoint),
       headers: headers,
     ).then((res) => res.body);
-     print(response);
   }
 
   @override
@@ -55,11 +53,12 @@ class _CityListPageState extends State<CityListPage> {
       appBar: AppBar(
         title:const Text('市区町村一覧'),
       ),
-      body:FutureBuilder<void>(
-        future:_future,
+      body:FutureBuilder<String>(
+        future:_citiesFuture,
         builder: (context, snapshot) {
           switch (snapshot.connectionState){
             case ConnectionState.done:
+            print(snapshot.data);
           return ListView(
             children: [
             for (final city in cities)
